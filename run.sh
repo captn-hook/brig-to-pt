@@ -1,0 +1,1 @@
+blender -b -P test.py 
