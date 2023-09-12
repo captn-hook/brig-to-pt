@@ -11,7 +11,8 @@ length=$(head -n 1 $1/*.csv | tr ',' '\n' | wc -l)
 echo $length
 
 # the pythone script will configure the compositer and render from --render-output to --render-output/(opaque|transparent|background)/number.png
-blender --background --python test.py -- "$@" --render-frame 0..$length --render-output $1/output/
+#blender --background --python test.py -- "$@" --render-frame 0..$length --render-output $1/output/
+../blender-3.6.2-linux-x64/blender --background --python test.py -- "$@" --render-frame 0..$length --render-output $1/output/
 #then rename img 0 to Overview.png and 1..n.png to XLabel[n].png
 
 #get row 0 of csv
