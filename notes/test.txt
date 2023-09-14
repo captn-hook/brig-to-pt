@@ -7,3 +7,10 @@ file_loc = 'C:\\Users\\MyComp\\Documents\\3Dobjects\\obj\\humans\\human_figure_J
 imported_object = bpy.ops.import_scene.obj(filepath=file_loc)
 obj_object = bpy.context.selected_objects[0] ####<--Fix
 print('Imported name: ', obj_object.name)
+
+
+https://firebase.google.com/docs/hosting/cloud-run //run in google cloud run??
+                        //auth https://cloud.google.com/run/docs/authenticating/service-to-service
+
+                        
+./blender/blender --background --python test.py -- "$@" --render-frame 0..$length --render-output $1/output/

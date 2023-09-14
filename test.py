@@ -465,6 +465,44 @@ def tracers(file, crv, arw):
             arrow.data.materials.append(mat)
             tips.data.materials.append(mat)
 
+            #keyframe the arrows according to ds or ts
+            #they should be visible on frame 0 and their frame d or t
+            dsots = True
+            if dsots: #keyframe according to ds
+                arrow.hide_render = False
+                tips.hide_render = False
+                arrow.keyframe_insert(data_path="hide_render", frame=0)
+                tips.keyframe_insert(data_path="hide_render", frame=0)
+                #if should be visible on frame 1, dont change hide_render
+                if ds == 0:
+                    arrow.keyframe_insert(data_path="hide_render", frame=1)
+                    tips.keyframe_insert(data_path="hide_render", frame=1)
+                else:
+                    #set to hide on frame 1
+                    arrow.hide_render = True
+                    tips.hide_render = True
+                    arrow.keyframe_insert(data_path="hide_render", frame=1)
+                    tips.keyframe_insert(data_path="hide_render", frame=1)
+
+                #set to hide on frame d
+                arrow.hide_render = True
+                tips.hide_render = True
+                arrow.keyframe_insert(data_path="hide_render", frame=ds)
+                tips.keyframe_insert(data_path="hide_render", frame=ds)
+
+                #set to show on frame d + 1
+                arrow.hide_render = False
+                tips.hide_render = False
+                arrow.keyframe_insert(data_path="hide_render", frame=ds + 1)
+                tips.keyframe_insert(data_path="hide_render", frame=ds + 1)
+
+                #set to hide on frame d + 2
+                arrow.hide_render = True
+                tips.hide_render = True
+                arrow.keyframe_insert(data_path="hide_render", frame=ds + 2)
+                tips.keyframe_insert(data_path="hide_render", frame=ds + 2)
+
+
             mat.use_nodes = True
             mat.node_tree.nodes["Principled BSDF"].inputs['Alpha'].default_value = opacity
             mat.node_tree.nodes["Principled BSDF"].inputs['Base Color'].default_value = (r, g, b, opacity)
@@ -566,6 +604,17 @@ def makeTracers(csv_file):
 
     tracers(csv_file, crv, arw)
 
+def getViews(csv_file):
+    #views is just last row columns 1 to end, not 0
+    views = []
+    with open(csv_file) as csv_file2:
+        csv_reader2 = csv.reader(csv_file2, delimiter=',')
+        for row in csv_reader2:
+            views = row[1:]
+    return views
+
+#opens the template file C:\Users\trist\brig-to-pt-1\blender\template.blend
+bpy.ops.wm.open_mainfile(filepath="./blender/template.blend")
 
 # grabs the folder from the command line
 folder = sys.argv[5]
@@ -582,13 +631,61 @@ print(csv_file, glb_file)
 for obj in bpy.data.objects:
     bpy.data.objects.remove(obj)
 
+# import glb
+model = bpy.ops.import_scene.gltf(filepath=glb_file)
+
+cut(2.75, bpy.data.objects[0])
+
+views = getViews(csv_file)
+
 points(csv_file)
 
 makeTracers(csv_file)
 
-# import glb
-bpy.ops.import_scene.gltf(filepath=glb_file)
+
+#create camera
+camera_data = bpy.data.cameras.new(name='Camera')
+camera_object = bpy.data.objects.new('Camera', camera_data)
+camera_object.rotation_mode = 'XYZ'
+bpy.context.scene.collection.objects.link(camera_object)
+#set camera to render camera
+bpy.context.scene.camera = camera_object
+
+#on frame 0 set camera to topdown view and set keyframe
+height = 5 #blender defaults to meters
+camera_object.location = (0, 0, height)
+
+#keyframe camera
+camera_object.keyframe_insert(data_path="location", frame=0)
+
+#for 1 to len(views) set camera to view and set keyframe
+for i in range(len(views)):
+    try:
+        x, y, z, rx, ry, rz = tuple(map(float, views[i].split('/')))
+    except:
+        x, y, z, rx, ry, rz = (0, 0, height, 0, 0, 0)
+
+    camera_object.location = (x, y, z)
+    camera_object.keyframe_insert(data_path="location", frame=i + 1)
+
+bpy.context.scene.frame_end = len(views) + 1
+bpy.context.scene.frame_start = 0
+
+#set render settings
+bpy.context.scene.render.engine = 'BLENDER_EEVEE'
+
+#spawn sun at angle and power
+# angle = 8 #degrees from vertical
+# power = 1.5 #strength of sun
+# sun = bpy.data.lights.new(name="Sun", type='SUN')
+# sun_obj = bpy.data.objects.new(name="Sun", object_data=sun)
+# bpy.context.collection.objects.link(sun_obj)
+# sun_obj.rotation_euler = (math.radians(angle), 0, 0)
+# sun.energy = power
+
+#set output to png and folder to <folder>/output
+bpy.context.scene.render.image_settings.file_format = 'PNG'
+bpy.context.scene.render.filepath = os.path.join(folder, "output/")
 
 # save to <folder>/output.blend
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(folder, "output.blend"))
-

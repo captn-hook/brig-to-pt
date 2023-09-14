@@ -1,0 +1,5 @@
+# Files over 4mb
+arroyo/Arroyo.glb
+arroyo/output.blend
+blender/
+blender/*

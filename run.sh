@@ -10,9 +10,21 @@ echo $@ #1 argument, the ./<folder>/ that has ./<folder>/*.csv and ./<folder>/*.
 length=$(head -n 1 $1/*.csv | tr ',' '\n' | wc -l)
 echo $length
 
+#if there is a $1/output.blend or $1/output/ folder, delete them
+if [ -d $1/output/ ]; then
+    rm -r $1/output/
+fi
+if [ -f $1/output.blend ]; then
+    rm $1/output.blend
+fi
+if [ -f $1/output.blend1 ]; then
+    rm $1/output.blend1
+fi
 # the pythone script will configure the compositer and render from --render-output to --render-output/(opaque|transparent|background)/number.png
 #blender --background --python test.py -- "$@" --render-frame 0..$length --render-output $1/output/
-../blender-3.6.2-linux-x64/blender --background --python test.py -- "$@" --render-frame 0..$length --render-output $1/output/
+./blender/blender --background --python test.py -- "$@" #--render-frame 0..$length --render-output $1/output/
+./blender/blender --background  $1/output.blend --render-frame 0..$length --render-output $1/output/
+
 #then rename img 0 to Overview.png and 1..n.png to XLabel[n].png
 
 #get row 0 of csv
