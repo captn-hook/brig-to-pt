@@ -3,3 +3,8 @@ arroyo/Arroyo.glb
 arroyo/output.blend
 blender/
 blender/*
+secrets.py
+
+*.glb
+*.blend
+*.blend1

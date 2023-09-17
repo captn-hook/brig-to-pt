@@ -8,45 +8,73 @@
 #                                  "folder": "folder name"}
 
 from flask import Flask, request, jsonify
+import json
+
 import os
-from google.cloud import storage
+#from google.cloud import storage
 
 app = Flask(__name__)
 
-storage_client = storage.Client() #need to set up the service account for this to work
+#import projectID from secret
+
+#storage_client = storage.Client(projectID)
 
 @app.route('/', methods=['POST'])
 def index():
-    #get the request
-    request_json = request.get_json()
-    #get the csv file
-    csv = request_json['csv']
-    #get the model link
-    model = request_json['model']
+    #check if request is json
+    if request.is_json:
+        print("request is json")
+        #get json
+        try:
+            req = request.get_json()
+        except:
+            print("error getting json")
+            print(request.data)
+            #request json has a b'' in front of it
+            req = json.loads(request.data[1:])
 
-    bucket_name = request_json['bucket']
-    folder_name = request_json['folder']
-    
-    #create folder and download model
-    os.system("mkdir model")
+        print(req)
+        
+        csv = req['csv']
+        model = req['model']
+        bucket = req['bucket']
+        folder = req['folder']
 
-    os.system("gcloud storage cp " + model + " model/model.glb")
+        print("csv: " + csv)
+        print("model: " + model)
+        print("bucket: " + bucket)
+        print("folder: " + folder)
+        #create folder and download model
+        os.system("mkdir model")
 
-    #write csv file in same folder
-    with open("model/model.csv", "w") as file:
-        file.write(csv)
+        #os.system("gcloud storage cp " + model + " model/model.glb")
+        #temporary, copy default model from /server/Arroyo.glb
+        os.system("cp Arroyo.glb model/model.glb")
 
-    #run the shell script
-    os.system("sh run.sh model")
+        #write csv file in same folder
+        with open("model/model.csv", "w") as file:
+            file.write(csv)
 
-    #upload the model/output to bucket/model/output
-    bucket = storage_client.get_bucket(bucket_name)
-    blob = bucket.blob(folder_name + "/output")
-    #upload folder
-    blob.upload_from_filename("model/output")
+        #run the shell script
+        os.system("sh run.sh model")
 
-    #force rm the directory
-    os.system("rm -rf model")
+        print("done?")
 
-    #return the response
-    return jsonify({"status": "OK"})
+        #upload the model/output to bucket/model/output
+        #   bucket = storage_client.get_bucket(bucket_name)
+        #  blob = bucket.blob(folder_name + "/output")
+        #upload folder
+        # blob.upload_from_filename("model/output")
+
+        #force rm the directory
+        os.system("rm -rf model")
+
+        #return the response
+        return jsonify({"response": "OK"}), 200
+
+    else:
+        print("request is not json")
+        return jsonify({"error": "request is not json"}), 400
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0')

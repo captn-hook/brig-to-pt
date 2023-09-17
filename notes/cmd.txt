@@ -1,0 +1,3 @@
+docker build --tag=brigo .
+
+ docker run brigo

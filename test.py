@@ -222,6 +222,8 @@ def datafile(datafilename):
                     camera_object = bpy.data.objects.new('Camera', camera_data)
                     camera_object.rotation_mode = 'XYZ'
                     bpy.context.scene.collection.objects.link(camera_object)
+                    #make main camera
+                    bpy.context.scene.camera = camera_object
                     #set keyframes
                     for i in range(len(camera_coords)):
                         camera_object.location = camera_coords[i]
@@ -454,11 +456,13 @@ def tracers(file, crv, arw):
             arrow.location[0] += curveconst
             tips.location[0] -= scale * 2
             
-            #material settings
+            #convert to mesh (apply modifiers), merge by distance, shade smooth
+
 
             dclc.objects.link(arrow)
             dclc.objects.link(tips)
             
+            #material settings
             #color the arrows
             mat = bpy.data.materials.new(name = str(name))
         
@@ -527,6 +531,10 @@ def tracers(file, crv, arw):
             bpy.context.scene.collection.objects.unlink(tips)
 
             counter = counter + 1
+
+
+        #for every  obj in arw
+        
 
 def createCurve(name, crv, d, t):
     # create curve
@@ -634,6 +642,11 @@ for obj in bpy.data.objects:
 # import glb
 model = bpy.ops.import_scene.gltf(filepath=glb_file)
 
+# #check for any cameras in the scene AND remove
+# for obj in bpy.data.objects:
+#     if obj.type == 'CAMERA':
+#         bpy.data.objects.remove(obj)
+
 cut(2.75, bpy.data.objects[0])
 
 views = getViews(csv_file)
@@ -643,30 +656,31 @@ points(csv_file)
 makeTracers(csv_file)
 
 
-#create camera
-camera_data = bpy.data.cameras.new(name='Camera')
-camera_object = bpy.data.objects.new('Camera', camera_data)
-camera_object.rotation_mode = 'XYZ'
-bpy.context.scene.collection.objects.link(camera_object)
-#set camera to render camera
-bpy.context.scene.camera = camera_object
+# #create camera
+# camera_data = bpy.data.cameras.new(name='Camera')
+# camera_object = bpy.data.objects.new('Camera', camera_data)
+# camera_object.rotation_mode = 'XYZ'
+# bpy.context.scene.collection.objects.link(camera_object)
+# #set camera to render camera
+# bpy.context.scene.camera = camera_object
 
-#on frame 0 set camera to topdown view and set keyframe
-height = 5 #blender defaults to meters
-camera_object.location = (0, 0, height)
+# #on frame 0 set camera to topdown view and set keyframe
+# height = 5 #blender defaults to meters
+# camera_object.location = (0, 0, height)
 
-#keyframe camera
-camera_object.keyframe_insert(data_path="location", frame=0)
+# #keyframe camera
+# camera_object.keyframe_insert(data_path="location", frame=0)
 
-#for 1 to len(views) set camera to view and set keyframe
-for i in range(len(views)):
-    try:
-        x, y, z, rx, ry, rz = tuple(map(float, views[i].split('/')))
-    except:
-        x, y, z, rx, ry, rz = (0, 0, height, 0, 0, 0)
+# #for 1 to len(views) set camera to view and set keyframe
+# for i in range(len(views)):
+#     try:
+#         print(views[i])
+#         x, y, z, rx, ry, rz = tuple(map(float, views[i].split('/')))
+#     except:
+#         x, y, z, rx, ry, rz = (0, 0, height, 0, 0, 0)
 
-    camera_object.location = (x, y, z)
-    camera_object.keyframe_insert(data_path="location", frame=i + 1)
+#     camera_object.location = (x, y, z)
+#     camera_object.keyframe_insert(data_path="location", frame=i + 1)
 
 bpy.context.scene.frame_end = len(views) + 1
 bpy.context.scene.frame_start = 0
