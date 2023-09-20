@@ -636,18 +636,16 @@ for file in os.listdir(folder):
 
 print(csv_file, glb_file)
 
-for obj in bpy.data.objects:
-    bpy.data.objects.remove(obj)
 
 # import glb
 model = bpy.ops.import_scene.gltf(filepath=glb_file)
-
-# #check for any cameras in the scene AND remove
-# for obj in bpy.data.objects:
-#     if obj.type == 'CAMERA':
-#         bpy.data.objects.remove(obj)
-
-cut(2.75, bpy.data.objects[0])
+# move to collection "C"
+for obj in bpy.data.objects:
+    bpy.data.collections["C"].objects.link(obj)
+    #unlink from root collection if in it
+    if obj.name != "Sun":
+        bpy.context.scene.collection.objects.unlink(obj)
+#cut(2.75, bpy.data.objects[0])
 
 views = getViews(csv_file)
 
@@ -655,47 +653,42 @@ points(csv_file)
 
 makeTracers(csv_file)
 
+#select nothing and object mode
+bpy.ops.object.mode_set(mode='OBJECT')
+bpy.ops.object.select_all(action='DESELECT')
+#clean up tracer geo in collec "[PT]Tracers" and remove "[PT]Curves"
+#select all objects in "[PT]Tracers"
+for obj in bpy.data.collections["[PT]Tracers"].all_objects:
+    obj.select_set(True)
+#remove all objects in "[PT]Tracers/[PT]Curves"
+for obj in bpy.data.collections["[PT]Curves"].all_objects:
+    obj.select_set(False)
+    
+bpy.ops.object.convert(target='MESH')
 
-# #create camera
-# camera_data = bpy.data.cameras.new(name='Camera')
-# camera_object = bpy.data.objects.new('Camera', camera_data)
-# camera_object.rotation_mode = 'XYZ'
-# bpy.context.scene.collection.objects.link(camera_object)
-# #set camera to render camera
-# bpy.context.scene.camera = camera_object
+bpy.data.collections.remove(bpy.data.collections["[PT]Curves"])
 
-# #on frame 0 set camera to topdown view and set keyframe
-# height = 5 #blender defaults to meters
-# camera_object.location = (0, 0, height)
+#change view layers of "[PT]Points" and "[PT]Tracers"
+#base view layer is 3d scan 'C
+bpy.data.scenes['Scene'].view_layers['ViewLayer'].layer_collection.children['C'].exclude = False
+bpy.data.scenes['Scene'].view_layers['ViewLayer'].layer_collection.children['[PT]Points'].exclude = True
+bpy.data.scenes['Scene'].view_layers['ViewLayer'].layer_collection.children['[PT]Tracers'].exclude = True
+#view layer 1 is points
+bpy.data.scenes['Scene'].view_layers['PT'].layer_collection.children['[PT]Points'].exclude = False
+bpy.data.scenes['Scene'].view_layers['PT'].layer_collection.children['[PT]Tracers'].exclude = True
+bpy.data.scenes['Scene'].view_layers['PT'].layer_collection.children['C'].exclude = True
+#view layer 2 is tracers
+bpy.data.scenes['Scene'].view_layers['TR'].layer_collection.children['[PT]Tracers'].exclude = False
+bpy.data.scenes['Scene'].view_layers['TR'].layer_collection.children['[PT]Points'].exclude = True
+bpy.data.scenes['Scene'].view_layers['TR'].layer_collection.children['C'].exclude = True
+#view layer 3 is opaque tracers (unused for now)
 
-# #keyframe camera
-# camera_object.keyframe_insert(data_path="location", frame=0)
-
-# #for 1 to len(views) set camera to view and set keyframe
-# for i in range(len(views)):
-#     try:
-#         print(views[i])
-#         x, y, z, rx, ry, rz = tuple(map(float, views[i].split('/')))
-#     except:
-#         x, y, z, rx, ry, rz = (0, 0, height, 0, 0, 0)
-
-#     camera_object.location = (x, y, z)
-#     camera_object.keyframe_insert(data_path="location", frame=i + 1)
 
 bpy.context.scene.frame_end = len(views) + 1
 bpy.context.scene.frame_start = 0
 
 #set render settings
 bpy.context.scene.render.engine = 'BLENDER_EEVEE'
-
-#spawn sun at angle and power
-# angle = 8 #degrees from vertical
-# power = 1.5 #strength of sun
-# sun = bpy.data.lights.new(name="Sun", type='SUN')
-# sun_obj = bpy.data.objects.new(name="Sun", object_data=sun)
-# bpy.context.collection.objects.link(sun_obj)
-# sun_obj.rotation_euler = (math.radians(angle), 0, 0)
-# sun.energy = power
 
 #set output to png and folder to <folder>/output
 bpy.context.scene.render.image_settings.file_format = 'PNG'

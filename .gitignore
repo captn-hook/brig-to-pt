@@ -1,6 +1,10 @@
 # Files over 4mb
 arroyo/Arroyo.glb
 arroyo/output.blend
+arroyo/main/
+arroyo/main2/
+arroyo/main3/
+arroyo/output/
 blender/
 blender/*
 secrets.py
